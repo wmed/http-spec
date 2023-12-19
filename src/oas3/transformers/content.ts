@@ -1,5 +1,5 @@
 import { isPlainObject } from '@stoplight/json';
-import { HttpParamStyles, IHttpEncoding, IMediaTypeContent, Optional } from '@stoplight/types';
+import { HttpParamStyles, IHttpEncoding, IHttpLink, IMediaTypeContent, Optional } from '@stoplight/types';
 import type { JSONSchema7 } from 'json-schema';
 import pickBy = require('lodash.pickby');
 
@@ -12,6 +12,8 @@ import { entries } from '../../utils';
 import type { Oas3TranslateFunction } from '../types';
 import { translateToExample } from './examples';
 import { translateHeaderObject } from './headers';
+import { LinkObject, LinksObject } from 'openapi3-ts';
+import { translateToServer } from './servers';
 
 const ACCEPTABLE_STYLES: (string | undefined)[] = [
   HttpParamStyles.Form,
@@ -102,4 +104,40 @@ export const translateMediaTypeObject = withContext<
       isNonNullable,
     ),
   };
+});
+
+export const translateLinkObject = withContext<
+  Oas3TranslateFunction<ArrayCallbackParameters<LinkObject>, Optional<IHttpLink<true>>>
+>(function (linkObject: LinkObject) {
+  // if (!isPlainObject(linkObject)) return;
+
+  if (!linkObject.operationId) {
+    return undefined;
+  }
+
+  return {
+    id: this.generateId.httpLink({ operationId: linkObject.operationId }),
+    ...linkObject,
+    server: [linkObject.server].map(translateToServer).pop(),
+  };
+  // return {
+  //   property,
+  //   style: encodingPropertyObject.style,
+  //   headers: entries(encodingPropertyObject.headers).map(translateHeaderObject, this).filter(isNonNullable),
+
+  //   ...pickBy(
+  //     {
+  //       allowReserved: encodingPropertyObject.allowReserved,
+  //       explode: encodingPropertyObject.explode,
+  //     },
+  //     isBoolean,
+  //   ),
+
+  //   ...pickBy(
+  //     {
+  //       mediaType: encodingPropertyObject.contentType,
+  //     },
+  //     isString,
+  //   ),
+  // };
 });

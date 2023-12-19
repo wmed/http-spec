@@ -1,4 +1,4 @@
-import type { IHttpOperationResponse, Optional, Reference } from '@stoplight/types';
+import type { IHttpLink, IHttpOperationResponse, Optional, Reference } from '@stoplight/types';
 import pickBy = require('lodash.pickby');
 
 import { withContext } from '../../context';
@@ -9,8 +9,9 @@ import { ArrayCallbackParameters } from '../../types';
 import { entries } from '../../utils';
 import { isResponseObject } from '../guards';
 import { Oas3TranslateFunction } from '../types';
-import { translateMediaTypeObject } from './content';
+import { translateLinkObject, translateMediaTypeObject } from './content';
 import { translateHeaderObject } from './headers';
+import mapValues = require('lodash.mapvalues');
 
 export const translateToResponse = withContext<
   Oas3TranslateFunction<
@@ -29,11 +30,14 @@ export const translateToResponse = withContext<
 
   const codeOrKey = this.context === 'service' ? getSharedKey(maybeResponseObject, statusCode) : statusCode;
 
+  const links = mapValues(maybeResponseObject.links, v => [v].map(translateLinkObject).pop() as IHttpLink);
+
   return {
     id: this.generateId.httpResponse({ codeOrKey }),
     code: statusCode,
     headers: entries(maybeResponseObject.headers).map(translateHeaderObject, this).filter(isNonNullable),
     contents: entries(maybeResponseObject.content).map(translateMediaTypeObject, this).filter(isNonNullable),
+    links,
 
     ...pickBy(
       {

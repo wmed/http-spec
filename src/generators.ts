@@ -68,6 +68,10 @@ export const idGenerators = {
     return join(['http_header', props.parentId, props.componentType, props.keyOrName]);
   },
 
+  httpLink: (props: Context & { operationId: string }) => {
+    return join(['http_cookie', props.parentId, props.operationId]);
+  },
+
   httpRequestBody: (props: Context & { key?: string; consumes?: string[] }) => {
     const deps = [
       'http_request_body',
